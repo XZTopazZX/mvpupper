@@ -60,12 +60,11 @@ export default function RootLayout() {
   const [isPremium, setIsPremium] = useState(false);
 
   useEffect(() => {
+    // Simplified initialization - just load from storage without blocking
     const initializeApp = async () => {
       try {
+        // Load user data
         const userData = await AsyncStorage.getItem('user');
-        const householdData = await AsyncStorage.getItem('household');
-        const premiumData = await AsyncStorage.getItem('isPremium');
-
         if (userData) {
           try {
             setUser(JSON.parse(userData));
@@ -74,6 +73,8 @@ export default function RootLayout() {
           }
         }
 
+        // Load household data
+        const householdData = await AsyncStorage.getItem('household');
         if (householdData) {
           try {
             setHousehold(JSON.parse(householdData));
@@ -82,6 +83,8 @@ export default function RootLayout() {
           }
         }
 
+        // Load premium status
+        const premiumData = await AsyncStorage.getItem('isPremium');
         if (premiumData) {
           try {
             setIsPremium(JSON.parse(premiumData));
@@ -92,8 +95,8 @@ export default function RootLayout() {
       } catch (error) {
         console.error('Error initializing app:', error);
       } finally {
-        // Always set loading to false after a short delay to ensure UI renders
-        setTimeout(() => setLoading(false), 100);
+        // Always finish loading
+        setLoading(false);
       }
     };
 
