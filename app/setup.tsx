@@ -11,8 +11,12 @@ import {
   Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 import { useAppContext } from './_layout';
-import { nanoid } from 'nanoid';
+
+function generateId() {
+  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+}
 
 export default function SetupScreen() {
   const [householdName, setHouseholdName] = useState('');
@@ -21,6 +25,7 @@ export default function SetupScreen() {
   const [dogAge, setDogAge] = useState('');
   const [loading, setLoading] = useState(false);
   const { user, setHousehold } = useAppContext();
+  const router = useRouter();
 
   const handleCreateHousehold = async () => {
     if (!householdName.trim() || !dogName.trim()) {
@@ -30,8 +35,8 @@ export default function SetupScreen() {
 
     setLoading(true);
     try {
-      const householdId = nanoid();
-      const dogId = nanoid();
+      const householdId = generateId();
+      const dogId = generateId();
 
       const household = {
         id: householdId,
@@ -50,8 +55,7 @@ export default function SetupScreen() {
 
       await AsyncStorage.setItem('household', JSON.stringify(household));
       setHousehold(household);
-      
-      // Navigation happens automatically via context change
+      router.replace('/(tabs)');
     } catch (error) {
       Alert.alert('Error', 'Failed to create household. Please try again.');
       console.error('Setup error:', error);
@@ -78,7 +82,7 @@ export default function SetupScreen() {
               placeholder="e.g., The Dog Squad"
               value={householdName}
               onChangeText={setHouseholdName}
-              placeholderTextColor="#ccc"
+              placeholderTextColor="#999"
             />
             <Text style={styles.hint}>Give your household a fun name!</Text>
           </View>
@@ -93,7 +97,7 @@ export default function SetupScreen() {
               placeholder="e.g., Titan"
               value={dogName}
               onChangeText={setDogName}
-              placeholderTextColor="#ccc"
+              placeholderTextColor="#999"
             />
 
             <Text style={styles.label}>Breed</Text>
@@ -102,7 +106,7 @@ export default function SetupScreen() {
               placeholder="e.g., German Shepherd"
               value={dogBreed}
               onChangeText={setDogBreed}
-              placeholderTextColor="#ccc"
+              placeholderTextColor="#999"
             />
 
             <Text style={styles.label}>Age (years)</Text>
@@ -112,7 +116,7 @@ export default function SetupScreen() {
               value={dogAge}
               onChangeText={setDogAge}
               keyboardType="number-pad"
-              placeholderTextColor="#ccc"
+              placeholderTextColor="#999"
             />
           </View>
 
@@ -182,6 +186,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 8,
     backgroundColor: '#f9f9f9',
+    color: '#333',
   },
   hint: {
     fontSize: 12,

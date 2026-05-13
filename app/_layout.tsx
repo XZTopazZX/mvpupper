@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Stack } from 'expo-router';
+import { Slot, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ActivityIndicator, View, Text } from 'react-native';
@@ -53,6 +53,29 @@ export function useAppContext() {
   return context;
 }
 
+function useProtectedRoute(user: User | null, household: Household | null, loading: boolean) {
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (loading) return;
+
+    const inAuthGroup = segments[0] === '(tabs)';
+    const inSetup = segments[0] === 'setup';
+
+    if (!user) {
+      // Not logged in, redirect to login
+      router.replace('/login');
+    } else if (!household) {
+      // Logged in but no household, redirect to setup
+      router.replace('/setup');
+    } else if (!inAuthGroup) {
+      // Logged in with household, redirect to main app
+      router.replace('/(tabs)');
+    }
+  }, [user, household, loading, segments]);
+}
+
 export default function RootLayout() {
   const [user, setUser] = useState<User | null>(null);
   const [household, setHousehold] = useState<Household | null>(null);
@@ -60,42 +83,25 @@ export default function RootLayout() {
   const [isPremium, setIsPremium] = useState(false);
 
   useEffect(() => {
-    // Simplified initialization - just load from storage without blocking
     const initializeApp = async () => {
       try {
-        // Load user data
         const userData = await AsyncStorage.getItem('user');
         if (userData) {
-          try {
-            setUser(JSON.parse(userData));
-          } catch (e) {
-            console.error('Error parsing user data:', e);
-          }
+          setUser(JSON.parse(userData));
         }
 
-        // Load household data
         const householdData = await AsyncStorage.getItem('household');
         if (householdData) {
-          try {
-            setHousehold(JSON.parse(householdData));
-          } catch (e) {
-            console.error('Error parsing household data:', e);
-          }
+          setHousehold(JSON.parse(householdData));
         }
 
-        // Load premium status
         const premiumData = await AsyncStorage.getItem('isPremium');
         if (premiumData) {
-          try {
-            setIsPremium(JSON.parse(premiumData));
-          } catch (e) {
-            console.error('Error parsing premium data:', e);
-          }
+          setIsPremium(JSON.parse(premiumData));
         }
       } catch (error) {
         console.error('Error initializing app:', error);
       } finally {
-        // Always finish loading
         setLoading(false);
       }
     };
@@ -103,34 +109,20 @@ export default function RootLayout() {
     initializeApp();
   }, []);
 
+  useProtectedRoute(user, household, loading);
+
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
         <ActivityIndicator size="large" color="#8B4513" />
-        <Text style={{ marginTop: 16, color: '#666' }}>Loading...</Text>
+        <Text style={{ marginTop: 16, color: '#666', fontSize: 16 }}>MVPupper</Text>
       </View>
     );
   }
 
   return (
     <AppContext.Provider value={{ user, household, setUser, setHousehold, loading, isPremium, setIsPremium }}>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          animationEnabled: true,
-        }}
-      >
-        {!user ? (
-          <>
-            <Stack.Screen name="login" options={{ animationEnabled: false }} />
-            <Stack.Screen name="setup" />
-          </>
-        ) : !household ? (
-          <Stack.Screen name="setup" options={{ animationEnabled: false }} />
-        ) : (
-          <Stack.Screen name="(tabs)" options={{ animationEnabled: false }} />
-        )}
-      </Stack>
+      <Slot />
       <StatusBar style="auto" />
     </AppContext.Provider>
   );

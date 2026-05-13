@@ -10,10 +10,12 @@ import {
   TextInput,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 import { useAppContext } from '../_layout';
 
 export default function SettingsScreen() {
-  const { user, household, isPremium, setIsPremium } = useAppContext();
+  const { user, household, isPremium, setIsPremium, setUser, setHousehold } = useAppContext();
+  const router = useRouter();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [foodAlertHours, setFoodAlertHours] = useState('8');
   const [waterAlertHours, setWaterAlertHours] = useState('4');
@@ -55,7 +57,10 @@ export default function SettingsScreen() {
         onPress: async () => {
           await AsyncStorage.removeItem('user');
           await AsyncStorage.removeItem('household');
-          // Navigation would handle this
+          await AsyncStorage.removeItem('activities');
+          setUser(null);
+          setHousehold(null);
+          router.replace('/login');
         },
         style: 'destructive',
       },

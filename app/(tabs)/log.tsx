@@ -74,24 +74,23 @@ export default function LogScreen() {
       {/* Dog Filter */}
       <View style={styles.filterSection}>
         <Text style={styles.filterLabel}>Filter by Dog</Text>
-        <FlatList
-          horizontal
-          scrollEnabled={false}
-          data={household?.dogs || []}
-          keyExtractor={dog => dog.id}
-          renderItem={({ item: dog }) => (
+        <View style={styles.filterList}>
+          {(household?.dogs || []).map(dog => (
             <TouchableOpacity
+              key={dog.id}
               style={[
                 styles.filterButton,
                 selectedDogId === dog.id && styles.filterButtonActive,
               ]}
               onPress={() => setSelectedDogId(dog.id)}
             >
-              <Text style={styles.filterButtonText}>{dog.name}</Text>
+              <Text style={[
+                styles.filterButtonText,
+                selectedDogId === dog.id && { color: '#fff' },
+              ]}>{dog.name}</Text>
             </TouchableOpacity>
-          )}
-          contentContainerStyle={styles.filterList}
-        />
+          ))}
+        </View>
       </View>
 
       {/* Activity List */}
@@ -155,6 +154,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   filterList: {
+    flexDirection: 'row',
     gap: 8,
   },
   filterButton: {

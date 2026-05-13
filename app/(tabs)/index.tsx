@@ -50,7 +50,7 @@ export default function HomeScreen() {
     }
 
     const newActivity: Activity = {
-      id: Math.random().toString(),
+      id: Math.random().toString(36).substring(2) + Date.now().toString(36),
       dogId: selectedDogId,
       type: activityType as any,
       timestamp: new Date().toISOString(),
@@ -62,7 +62,6 @@ export default function HomeScreen() {
       await AsyncStorage.setItem('activities', JSON.stringify(updated));
       setActivities(updated);
 
-      // Show success feedback
       const activityLabel = ACTIVITY_TYPES.find(a => a.type === activityType)?.label;
       const dogName = household?.dogs.find(d => d.id === selectedDogId)?.name;
       Alert.alert('Logged!', `${activityLabel} recorded for ${dogName}`);
@@ -123,24 +122,19 @@ export default function HomeScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Recent Activity</Text>
         {recentActivities.length > 0 ? (
-          <FlatList
-            scrollEnabled={false}
-            data={recentActivities}
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => {
-              const activityLabel = ACTIVITY_TYPES.find(a => a.type === item.type)?.label;
-              const time = new Date(item.timestamp).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-              });
-              return (
-                <View style={styles.activityItem}>
-                  <Text style={styles.activityTime}>{time}</Text>
-                  <Text style={styles.activityType}>{activityLabel}</Text>
-                </View>
-              );
-            }}
-          />
+          recentActivities.map(item => {
+            const activityLabel = ACTIVITY_TYPES.find(a => a.type === item.type)?.label;
+            const time = new Date(item.timestamp).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            });
+            return (
+              <View key={item.id} style={styles.activityItem}>
+                <Text style={styles.activityTime}>{time}</Text>
+                <Text style={styles.activityType}>{activityLabel}</Text>
+              </View>
+            );
+          })
         ) : (
           <Text style={styles.emptyText}>No activities logged yet</Text>
         )}

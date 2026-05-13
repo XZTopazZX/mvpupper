@@ -12,8 +12,11 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { nanoid } from 'nanoid';
 import { useAppContext } from './_layout';
+
+function generateId() {
+  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+}
 
 export default function LoginScreen() {
   const [name, setName] = useState('');
@@ -29,13 +32,12 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      const userId = nanoid();
+      const userId = generateId();
       const userData = { id: userId, name: name.trim() };
 
       await AsyncStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
-      
-      // Navigation happens automatically via context change
+      router.replace('/setup');
     } catch (error) {
       Alert.alert('Error', 'Failed to login. Please try again.');
       console.error('Login error:', error);
@@ -71,11 +73,10 @@ export default function LoginScreen() {
             <TextInput
               style={styles.input}
               placeholder="Enter your name"
-              placeholderTextColor="#ccc"
+              placeholderTextColor="#999"
               value={name}
               onChangeText={setName}
               editable={!loading}
-              autoFocus
             />
 
             <TouchableOpacity
