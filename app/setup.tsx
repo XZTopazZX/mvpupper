@@ -18,6 +18,15 @@ function generateId() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
 }
 
+function generateInviteCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
 export default function SetupScreen() {
   const [householdName, setHouseholdName] = useState('');
   const [dogName, setDogName] = useState('');
@@ -37,6 +46,7 @@ export default function SetupScreen() {
     try {
       const householdId = generateId();
       const dogId = generateId();
+      const inviteCode = generateInviteCode();
 
       const household = {
         id: householdId,
@@ -49,7 +59,14 @@ export default function SetupScreen() {
             age: parseInt(dogAge) || 0,
           },
         ],
-        members: [user!.id],
+        members: [
+          {
+            userId: user!.id,
+            name: user!.name,
+            joinedAt: new Date().toISOString(),
+          },
+        ],
+        inviteCode,
         createdAt: new Date().toISOString(),
       };
 
@@ -100,14 +117,15 @@ export default function SetupScreen() {
               placeholderTextColor="#999"
             />
 
-            <Text style={styles.label}>Breed</Text>
+            <Text style={styles.label}>Breed(s)</Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g., German Shepherd"
+              placeholder="e.g., Golden Retriever or Golden Retriever Mix or Lab/Poodle"
               value={dogBreed}
               onChangeText={setDogBreed}
               placeholderTextColor="#999"
             />
+            <Text style={styles.hint}>Enter multiple breeds separated by commas or slashes for mixes</Text>
 
             <Text style={styles.label}>Age (years)</Text>
             <TextInput

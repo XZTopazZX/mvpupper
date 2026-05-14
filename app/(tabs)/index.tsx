@@ -80,6 +80,16 @@ export default function HomeScreen() {
 
   return (
     <ScrollView style={styles.container}>
+      {/* Header with household and member info */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.householdName}>{household?.name}</Text>
+          <Text style={styles.memberCount}>
+            {household?.members.length || 0} member{household?.members && household.members.length !== 1 ? 's' : ''}
+          </Text>
+        </View>
+      </View>
+
       {/* Dog Selector */}
       <View style={styles.dogSelector}>
         <Text style={styles.sectionTitle}>Select Your Pup</Text>
@@ -158,6 +168,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    backgroundColor: '#f9f9f9',
+  },
+  householdName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  memberCount: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 4,
   },
   dogSelector: {
     paddingHorizontal: 16,

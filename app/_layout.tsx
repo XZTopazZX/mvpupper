@@ -11,11 +11,18 @@ interface Dog {
   age: number;
 }
 
+interface HouseholdMember {
+  userId: string;
+  name: string;
+  joinedAt: string;
+}
+
 interface Household {
   id: string;
   name: string;
   dogs: Dog[];
-  members: string[];
+  members: HouseholdMember[];
+  inviteCode: string;
   createdAt: string;
 }
 
@@ -41,6 +48,7 @@ interface AppContextType {
   loading: boolean;
   isPremium: boolean;
   setIsPremium: (isPremium: boolean) => void;
+  updateHousehold: (household: Household) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -111,6 +119,15 @@ export default function RootLayout() {
 
   useProtectedRoute(user, household, loading);
 
+  const updateHousehold = async (updatedHousehold: Household) => {
+    try {
+      await AsyncStorage.setItem('household', JSON.stringify(updatedHousehold));
+      setHousehold(updatedHousehold);
+    } catch (error) {
+      console.error('Error updating household:', error);
+    }
+  };
+
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
@@ -121,7 +138,7 @@ export default function RootLayout() {
   }
 
   return (
-    <AppContext.Provider value={{ user, household, setUser, setHousehold, loading, isPremium, setIsPremium }}>
+    <AppContext.Provider value={{ user, household, setUser, setHousehold, loading, isPremium, setIsPremium, updateHousehold }}>
       <Slot />
       <StatusBar style="auto" />
     </AppContext.Provider>
