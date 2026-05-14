@@ -9,12 +9,12 @@
 - [x] Improved setup screen UI with better flow
 - [x] Context management system for app state
 - [x] Automatic navigation based on auth state
-- [ ] Multi-breed support (comma-separated or array)
-- [ ] Show actual user name instead of "member 1"
-- [ ] Household member invitation system with invite codes
-- [ ] Household join via invite code
-- [ ] Member list display in settings
-- [ ] Remove member functionality
+- [x] Multi-breed support (comma-separated)
+- [x] Show actual user name instead of "member 1"
+- [x] Household member invitation system with invite codes
+- [ ] Household join via invite code (backend needed)
+- [x] Member list display in settings
+- [x] Remove member functionality
 
 ### Activity Logging (Free Tier)
 - [x] Home screen with dog selector
@@ -46,8 +46,8 @@
 - [x] Bottom tab navigation (Home, Log, Calendar, Settings)
 - [x] Mobile-first responsive design
 - [ ] Dropdown/picker for activity types (instead of grid)
-- [ ] Better home screen layout and styling
-- [ ] Improved settings screen layout
+- [x] Better home screen layout and styling (header with household info)
+- [x] Improved settings screen layout (organized sections)
 - [ ] Smooth animations and satisfying interactions
 - [ ] Loading states and empty states
 
