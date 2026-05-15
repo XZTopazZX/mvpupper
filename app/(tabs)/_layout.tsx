@@ -34,6 +34,14 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="dog-profiles"
+        options={{
+          title: 'Dog Profiles',
+          tabBarLabel: 'Profiles',
+          tabBarIcon: ({ color, size }) => <MaterialIcons name="pets" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="calendar"
         options={{
           title: 'Calendar',
