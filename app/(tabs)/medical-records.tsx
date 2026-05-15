@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Alert, FlatList } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAppContext } from './_layout';
+import { useAppContext } from '../_layout';
+import { useRouter } from 'expo-router';
 
 interface MedicalRecord {
   id: string;

@@ -34,11 +34,18 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="premium-dashboard"
+        options={{
+          title: 'Premium',
+          tabBarLabel: 'Premium',
+          tabBarIcon: ({ color, size }) => <MaterialIcons name="star" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="dog-profiles"
         options={{
+          href: null,
           title: 'Dog Profiles',
-          tabBarLabel: 'Profiles',
-          tabBarIcon: ({ color, size }) => <MaterialIcons name="pets" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -57,7 +64,21 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => <MaterialIcons name="settings" size={size} color={color} />,
         }}
       />
-      {/* Hide the explore tab from navigation */}
+      {/* Hidden premium screens - accessible via navigation but not in tab bar */}
+      <Tabs.Screen
+        name="medical-records"
+        options={{
+          href: null,
+          title: 'Medical Records',
+        }}
+      />
+      <Tabs.Screen
+        name="vet-appointments"
+        options={{
+          href: null,
+          title: 'Vet Appointments',
+        }}
+      />
       <Tabs.Screen
         name="explore"
         options={{
