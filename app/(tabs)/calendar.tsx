@@ -4,11 +4,9 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   ScrollView,
-  FlatList,
+  Animated,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppContext } from '../_layout';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -19,7 +17,6 @@ interface VetAppointment {
   vetName: string;
   date: string;
   notes?: string;
-  createdAt: string;
 }
 
 interface MedicalRecord {
@@ -28,21 +25,21 @@ interface MedicalRecord {
   title: string;
   date: string;
   notes?: string;
-  createdAt: string;
 }
 
 export default function CalendarScreen() {
-  const { isPremium, household } = useAppContext();
-  const router = useRouter();
+  const { household } = useAppContext();
   const [appointments, setAppointments] = useState<VetAppointment[]>([]);
   const [records, setRecords] = useState<MedicalRecord[]>([]);
-  const [selectedDogId, setSelectedDogId] = useState(household?.dogs[0]?.id || '');
+  const [selectedDogId, setSelectedDogId] = useState<string | null>(null);
+  const fadeAnim = new Animated.Value(0);
 
   useEffect(() => {
     loadData();
     if (household?.dogs[0]) {
       setSelectedDogId(household.dogs[0].id);
     }
+    Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
   }, [household]);
 
   const loadData = async () => {
@@ -54,295 +51,167 @@ export default function CalendarScreen() {
       if (aptsData) setAppointments(JSON.parse(aptsData));
       if (recsData) setRecords(JSON.parse(recsData));
     } catch (error) {
-      console.error('Error loading calendar data:', error);
+      console.error('Error loading data:', error);
     }
   };
 
-  if (!isPremium) {
-    return (
-      <View style={styles.premiumContainer}>
-        <Text style={styles.premiumIcon}>🔒</Text>
-        <Text style={styles.premiumTitle}>Premium Feature</Text>
-        <Text style={styles.premiumText}>
-          Unlock the calendar and appointment reminders with MVPupper Premium
-        </Text>
-        <View style={styles.features}>
-          <Text style={styles.featureItem}>📅 Vet appointments</Text>
-          <Text style={styles.featureItem}>💊 Medical records</Text>
-          <Text style={styles.featureItem}>💉 Vaccine tracking</Text>
-          <Text style={styles.featureItem}>✂️ Health history</Text>
-        </View>
-        <TouchableOpacity style={styles.upgradeButton} onPress={() => router.push('/(tabs)/settings')}>
-          <Text style={styles.upgradeButtonText}>Upgrade to Premium</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  const dogAppointments = appointments
+    .filter(a => a.dogId === selectedDogId)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  const dogAppointments = appointments.filter(a => a.dogId === selectedDogId);
-  const dogRecords = records.filter(r => r.dogId === selectedDogId);
-  const allItems = [
-    ...dogAppointments.map(a => ({ ...a, type: 'appointment' as const })),
-    ...dogRecords.map(r => ({ ...r, type: 'record' as const })),
-  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const dogRecords = records
+    .filter(r => r.dogId === selectedDogId)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const upcomingAppointments = dogAppointments.filter(a => new Date(a.date) >= new Date());
+  const pastAppointments = dogAppointments.filter(a => new Date(a.date) < new Date());
+
+  const selectedDog = household?.dogs.find(d => d.id === selectedDogId);
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Appointments & Records</Text>
-      </View>
-
-      {/* Dog Selector */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dogSelector}>
-        {household?.dogs.map(dog => (
-          <TouchableOpacity
-            key={dog.id}
-            style={[styles.dogTab, selectedDogId === dog.id && styles.dogTabActive]}
-            onPress={() => setSelectedDogId(dog.id)}
-          >
-            <Text style={[styles.dogTabText, selectedDogId === dog.id && styles.dogTabTextActive]}>
-              {dog.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* Quick Actions */}
-      <View style={styles.actionsContainer}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => router.push('../vet-appointments')}
-        >
-          <MaterialIcons name="local-hospital" size={24} color="#fff" />
-          <Text style={styles.actionButtonText}>Vet Appointment</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => router.push('../medical-records')}
-        >
-          <MaterialIcons name="description" size={24} color="#fff" />
-          <Text style={styles.actionButtonText}>Medical Record</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Items List */}
-      {allItems.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>📅</Text>
-          <Text style={styles.emptyText}>No appointments or records</Text>
-          <Text style={styles.emptySubtext}>Add vet visits and medical records</Text>
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Calendar</Text>
+          <Text style={styles.subtitle}>Appointments & medical records</Text>
         </View>
-      ) : (
-        <FlatList
-          data={allItems}
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.itemCard}>
-              <View style={styles.itemContent}>
-                <MaterialIcons
-                  name={item.type === 'appointment' ? 'local-hospital' : 'description'}
-                  size={24}
-                  color="#8B4513"
-                />
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemTitle}>
-                    {item.type === 'appointment' ? (item as VetAppointment).vetName : (item as MedicalRecord).title}
-                  </Text>
-                  <Text style={styles.itemDate}>{item.date}</Text>
-                  {item.notes && <Text style={styles.itemNotes}>{item.notes}</Text>}
+
+        {/* Dog Selector */}
+        <View style={styles.selectorSection}>
+          <Text style={styles.sectionLabel}>Select Dog</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dogList}>
+            {household?.dogs.map(dog => (
+              <TouchableOpacity
+                key={dog.id}
+                style={[styles.dogTab, selectedDogId === dog.id && styles.dogTabActive]}
+                onPress={() => setSelectedDogId(dog.id)}
+              >
+                <Text style={[styles.dogTabText, selectedDogId === dog.id && styles.dogTabTextActive]}>
+                  {dog.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Upcoming Appointments */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialIcons name="event" size={20} color="#8B4513" />
+            <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
+          </View>
+          {upcomingAppointments.length === 0 ? (
+            <View style={styles.emptyState}>
+              <MaterialIcons name="event-note" size={40} color="#ddd" />
+              <Text style={styles.emptyText}>No upcoming appointments</Text>
+            </View>
+          ) : (
+            upcomingAppointments.map(apt => (
+              <View key={apt.id} style={styles.appointmentCard}>
+                <View style={styles.aptDateBadge}>
+                  <Text style={styles.aptDate}>{new Date(apt.date).getDate()}</Text>
+                  <Text style={styles.aptMonth}>{new Date(apt.date).toLocaleString('default', { month: 'short' })}</Text>
+                </View>
+                <View style={styles.aptInfo}>
+                  <Text style={styles.aptVet}>{apt.vetName}</Text>
+                  <Text style={styles.aptTime}>{new Date(apt.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                  {apt.notes && <Text style={styles.aptNotes}>{apt.notes}</Text>}
                 </View>
               </View>
-              <View style={[styles.itemBadge, item.type === 'appointment' ? styles.appointmentBadge : styles.recordBadge]}>
-                <Text style={styles.badgeText}>{item.type === 'appointment' ? 'Apt' : 'Rec'}</Text>
-              </View>
-            </View>
+            ))
           )}
-          scrollEnabled={false}
-          contentContainerStyle={styles.listContent}
-        />
-      )}
-    </ScrollView>
+        </View>
+
+        {/* Past Appointments */}
+        {pastAppointments.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <MaterialIcons name="history" size={20} color="#999" />
+              <Text style={styles.sectionTitleGray}>Past Appointments</Text>
+            </View>
+            {pastAppointments.slice(0, 3).map(apt => (
+              <View key={apt.id} style={[styles.appointmentCard, styles.pastCard]}>
+                <View style={[styles.aptDateBadge, styles.pastBadge]}>
+                  <Text style={styles.aptDate}>{new Date(apt.date).getDate()}</Text>
+                  <Text style={styles.aptMonth}>{new Date(apt.date).toLocaleString('default', { month: 'short' })}</Text>
+                </View>
+                <View style={styles.aptInfo}>
+                  <Text style={[styles.aptVet, styles.pastText]}>{apt.vetName}</Text>
+                  <Text style={[styles.aptTime, styles.pastText]}>{new Date(apt.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Medical Records */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialIcons name="local-hospital" size={20} color="#8B4513" />
+            <Text style={styles.sectionTitle}>Medical Records</Text>
+          </View>
+          {dogRecords.length === 0 ? (
+            <View style={styles.emptyState}>
+              <MaterialIcons name="description" size={40} color="#ddd" />
+              <Text style={styles.emptyText}>No medical records</Text>
+            </View>
+          ) : (
+            dogRecords.map(record => (
+              <View key={record.id} style={styles.recordCard}>
+                <View style={styles.recordIcon}>
+                  <MaterialIcons name="description" size={20} color="#fff" />
+                </View>
+                <View style={styles.recordInfo}>
+                  <Text style={styles.recordTitle}>{record.title}</Text>
+                  <Text style={styles.recordDate}>{new Date(record.date).toLocaleDateString()}</Text>
+                  {record.notes && <Text style={styles.recordNotes}>{record.notes}</Text>}
+                </View>
+              </View>
+            ))
+          )}
+        </View>
+
+        <View style={styles.spacer} />
+      </ScrollView>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  premiumContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    backgroundColor: '#fff',
-  },
-  premiumIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  premiumTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 12,
-  },
-  premiumText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  features: {
-    width: '100%',
-    marginBottom: 24,
-  },
-  featureItem: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 12,
-    paddingLeft: 20,
-  },
-  upgradeButton: {
-    backgroundColor: '#8B4513',
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 8,
-  },
-  upgradeButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
-  },
-  dogSelector: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 12,
-  },
-  dogTab: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginRight: 8,
-    borderRadius: 20,
-    backgroundColor: '#f0f0f0',
-  },
-  dogTabActive: {
-    backgroundColor: '#8B4513',
-  },
-  dogTabText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-  },
-  dogTabTextActive: {
-    color: '#fff',
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    backgroundColor: '#8B4513',
-    flexDirection: 'row',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  actionButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 12,
-  },
-  emptyContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 12,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#999',
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#ccc',
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  itemCard: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderLeftWidth: 4,
-    borderLeftColor: '#8B4513',
-  },
-  itemContent: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  itemInfo: {
-    flex: 1,
-  },
-  itemTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  itemDate: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 2,
-  },
-  itemNotes: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
-    fontStyle: 'italic',
-  },
-  itemBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  appointmentBadge: {
-    backgroundColor: '#FFF8DC',
-  },
-  recordBadge: {
-    backgroundColor: '#E8F5E9',
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#8B4513',
-  },
+  container: { flex: 1, backgroundColor: '#fafafa' },
+  header: { paddingHorizontal: 16, paddingVertical: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
+  title: { fontSize: 28, fontWeight: '700', color: '#333', marginBottom: 4 },
+  subtitle: { fontSize: 13, color: '#999' },
+  selectorSection: { paddingHorizontal: 16, paddingVertical: 16 },
+  sectionLabel: { fontSize: 14, fontWeight: '700', color: '#333', marginBottom: 12 },
+  dogList: { flexDirection: 'row', gap: 8 },
+  dogTab: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: '#f0f0f0' },
+  dogTabActive: { backgroundColor: '#8B4513', borderColor: '#8B4513' },
+  dogTabText: { fontSize: 13, fontWeight: '600', color: '#666' },
+  dogTabTextActive: { color: '#fff' },
+  section: { paddingHorizontal: 16, paddingVertical: 16 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  sectionTitle: { fontSize: 14, fontWeight: '700', color: '#333' },
+  sectionTitleGray: { fontSize: 14, fontWeight: '700', color: '#999' },
+  appointmentCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+  pastCard: { opacity: 0.6 },
+  aptDateBadge: { width: 50, height: 50, borderRadius: 10, backgroundColor: '#8B4513', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  pastBadge: { backgroundColor: '#ddd' },
+  aptDate: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  aptMonth: { fontSize: 10, color: '#fff', fontWeight: '500' },
+  aptInfo: { flex: 1 },
+  aptVet: { fontSize: 14, fontWeight: '600', color: '#333' },
+  aptTime: { fontSize: 12, color: '#999', marginTop: 2 },
+  aptNotes: { fontSize: 11, color: '#bbb', marginTop: 4, fontStyle: 'italic' },
+  pastText: { color: '#999' },
+  recordCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, borderLeftWidth: 4, borderLeftColor: '#FFD700', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+  recordIcon: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#8B4513', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  recordInfo: { flex: 1 },
+  recordTitle: { fontSize: 14, fontWeight: '600', color: '#333' },
+  recordDate: { fontSize: 12, color: '#999', marginTop: 2 },
+  recordNotes: { fontSize: 11, color: '#bbb', marginTop: 4, fontStyle: 'italic' },
+  emptyState: { alignItems: 'center', paddingVertical: 40, backgroundColor: '#fff', borderRadius: 12 },
+  emptyText: { fontSize: 13, color: '#ccc', marginTop: 8 },
+  spacer: { height: 40 },
 });
