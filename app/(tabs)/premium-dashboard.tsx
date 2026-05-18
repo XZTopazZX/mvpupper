@@ -157,19 +157,6 @@ export default function PremiumDashboardScreen() {
   const walkCount = dogActivities.filter(a => a.type === 'walk').length;
   const feedCount = dogActivities.filter(a => a.type === 'food').length;
 
-  if (!isPremium) {
-    return (
-      <View style={styles.lockedContainer}>
-        <MaterialIcons name="lock" size={64} color="#FFD700" />
-        <Text style={styles.lockedTitle}>Premium Feature</Text>
-        <Text style={styles.lockedText}>Unlock to manage all your dog's health & activity</Text>
-        <TouchableOpacity style={styles.upgradeBtn}>
-          <Text style={styles.upgradeBtnText}>Upgrade to Premium</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       {/* Dog Selector */}
