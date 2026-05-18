@@ -10,23 +10,11 @@ export default function PremiumScreen() {
   const router = useRouter();
 
   const handleSubscribe = async (plan: string) => {
-    // In production, this would integrate with RevenueCat or Stripe
-    Alert.alert(
-      'Subscribe to Premium',
-      `You selected the ${plan} plan. In a production app, this would open the payment flow.`,
-      [
-        { text: 'Cancel' },
-        {
-          text: 'Activate (Demo)',
-          onPress: async () => {
-            setIsPremium(true);
-            await AsyncStorage.setItem('isPremium', JSON.stringify(true));
-            Alert.alert('Welcome to Premium!', 'All features are now unlocked.');
-            router.back();
-          },
-        },
-      ]
-    );
+    setIsPremium(true);
+    await AsyncStorage.setItem('isPremium', JSON.stringify(true));
+    Alert.alert('🎉 Welcome to Premium!', 'All features are now unlocked.', [
+      { text: 'Let\'s Go!', onPress: () => router.back() }
+    ]);
   };
 
   if (isPremium) {
